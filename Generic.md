@@ -356,7 +356,135 @@ b E Type : java.lang.Integer
 <T> returnType : java.lang.Double
 
 ```
-
 -   제네릭 메소드는 제네릭 클래스 타입과 별도로 지정된다는 것을 볼 수 있다.
 
-https://st-lab.tistory.com/153
+---
+4. 제한된 Generic과 와일드 카드
+```java
+<K extends T>	// T와 T의 자손 타입만 가능 (K는 들어오는 타입으로 지정 됨)
+<K super T>	// T와 T의 부모(조상) 타입만 가능 (K는 들어오는 타입으로 지정 됨)
+ 
+<? extends T>	// T와 T의 자손 타입만 가능
+<? super T>	// T와 T의 부모(조상) 타입만 가능
+<?>		// 모든 타입 가능. <? extends Object>랑 같은 의미
+```
+※ 주의사항 <br>
+K extends T와 ? extends T는 비슷한 구조지만 차이점이 있다.
+'유형 경계를 지정'하는 것은 같으나 경계가 지정되고 K는 특정 타입으로 지정이 되지만, ?는 타입이 지정되지 않는다는 의미다.
+
+```java
+ - Number와 이를 상속하는 Integer, Short, Double, Long 등의
+ - 타입이 지정될 수 있으며, 객체 혹은 메소드를 호출 할 경우 K는
+ - 지정된 타입으로 변환이 된다.
+<K extends Number>
+ 
+ - Number와 이를 상속하는 Integer, Short, Double, Long 등의
+ - 타입이 지정될 수 있으며, 객체 혹은 메소드를 호출 할 경우 지정 되는 타입이 없어
+ - 타입 참조를 할 수는 없다.
+<? extends T>	// T와 T의 자손 타입만 가능
+```
+
+<img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbpS4Bp%2FbtqLcTploFp%2FcTEkLdHVPZW5lnKOvtbS91%2Fimg.png" width="500"><br>
+
+```java
+<K extends T>, <? extends T>
+
+<T extends B>	// B와 C타입만 올 수 있음
+<T extends E>	// E타입만 올 수 있음
+<T extends A>	// A, B, C, D, E 타입이 올 수 있음
+ 
+<? extends B>	// B와 C타입만 올 수 있음
+<? extends E>	// E타입만 올 수 있음
+<? extends A>	// A, B, C, D, E 타입이 올 수 있음
+```
+ - extends 뒤에 오는 타입이 최상위 타입으로 한계가 정해지는 것이다.
+---
+ 대표적인 예로는 제네릭 클래스에서 수를 표현하는 클래스만 받고 싶은 경우가 있다. 대표적인 Integer, Long, Byte, Double, Float, Short 같은 래퍼 클래스들은 Number 클래스를 상속 받는다.
+
+즉,  Integer, Long, Byte, Double, Float, Short 같은 수를 표현하는 래퍼 클래스만으로 제한하고 싶은 경우 다음과 같이 쓸 수 있다.
+```java
+public class ClassName <K extends Number> { ... }
+
+public class ClassName <K extends Number> { 
+	... 
+}
+ 
+public class Main {
+	public static void main(String[] args) {
+ 
+		ClassName<Double> a1 = new ClassName<Double>();	// OK!
+ 
+		ClassName<String> a2 = new ClassName<String>();	// error!
+	}
+}
+
+```
+- Integer는 Number 클래스를 상속받는 클래스라 가능하지만, String은 Number클래스와는 완전 별개의 클래스이기 때문에 에러(Bound mismatch)를 띄운다.
+---
+```java
+<K super T>, <? super T>
+
+<K super B>	// B와 A타입만 올 수 있음
+<K super E>	// E, D, A타입만 올 수 있음
+<K super A>	// A타입만 올 수 있음
+ 
+<? super B>	// B와 A타입만 올 수 있음
+<? super E>	// E, D, A타입만 올 수 있음
+<? super A>	// A타입만 올 수 있음
+```
+
+```java
+public class ClassName <E extends Comparable<? super E>> { ... }
+ ```
+- 특히 PriorityQueue(우선순위 큐), TreeSet, TreeMap 같이 값을 정렬하는 클래스 만약 여러분이 특정 제네릭에 대한 자기 참조 비교를 하고싶을 경우 대부분 공통적으로 위와 같은 형식을 취한다.
+
+```java
+public class SaltClass <E extends Comparable<E>> { ... }
+ 
+public class Student implements Comparable<Student> {
+	@Override
+	public int compareTo(Person o) { ... };
+}
+ 
+public class Main {
+	public static void main(String[] args) {
+		SaltClass<Student> a = new SaltClass<Student>();
+	}
+}
+```
+- 이렇게만 쓴다면 E extends Comparable<E> 까지만 써도 무방하다.
+즉, SaltClass의 E 는 Student 이 되어야 하는데, <br> Comparable<Student> 의 하위 타입이어야 하므로 거꾸로 말해 Comparable을 구현해야한다는 의미인 것이다.
+
+- 그러면 왜 Comparable<E> 가 아닌 <? super E> 일까?<br>
+잠깐 설명했지만, super E는 E를 포함한 상위 타입 객체들이 올 수 있다고 했다.
+
+- 만약에 위의 예제에서 학생보다 더 큰 범주의 클래스인 사람(Person)클래스를 둔다면 어떻게 될까? 한마디로 아래와 같다면?
+```java
+public class SaltClass <E extends Comparable<E>> { ... }	// Error가능성 있음
+public class SaltClass <E extends Comparable<? super E>> { ... }	// 안전성이 높음
+ 
+public class Person {...}
+ 
+public class Student extends Person implements Comparable<Person> {
+	@Override
+	public int compareTo(Person o) { ... };
+}
+ 
+public class Main {
+	public static void main(String[] args) {
+		SaltClass<Student> a = new SaltClass<Student>();
+	}
+}
+```
+- 쉽게 말하면 Person을 상속받고 Comparable 구현부인 comparTo에서 Person 타입으로 업캐스팅(Up-Casting) 한다면 어떻게 될까?
+
+- 만약 <E extends Comparable<E>>라면 SaltClass<Student> a 객체가 타입 파라미터로 Student를 주지만, Comparable에서는 그보다 상위 타입인 Person으로 비교하기 때문에 Comparable<E>의 E인 Student보다 상위 타입 객체이기 때문에 제대로 정렬이 안되거나 에러가 날 수 있다.
+
+- 그렇기 때문에 E 객체의 상위 타입, 즉 <? super E> 을 해줌으로써 위와같은 불상사를 방지할 수가 있는 것이다.
+
+- 즉, <E extends Comparable<? super E>> 는 쉽게 말하자면 E 타입 또는 E 타입의 슈퍼클래스가 Comparable을 의무적으로 구현해야한다는 뜻으로 슈퍼클래스타입으로 Up Casting이 발생하더라도 안정성을 보장받을 수 있다.
+
+---
+이 긴 내용을 한 마디로 정의하자면 이렇다.
+
+"E 자기 자신 및 조상 타입과 비교할 수 있는 E"
